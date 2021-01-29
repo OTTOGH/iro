@@ -1,6 +1,6 @@
 {
-  "db": "mongodb://admin:123456@82.156.112.195:27017/tug-of-war",
-  "serverAddress":"http://82.156.112.195:8001",
+  "db": "mongodb://mongo/tug-of-war",
+  "serverAddress":"http://127.0.0.1",
   "sessionSecret": "secret",
   "port": 1338
 }
