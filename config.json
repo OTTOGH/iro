@@ -1,5 +1,5 @@
 {
-  "db": "mongodb://localhost/tug-of-war",
+  "db": "mongodb://admin:123456@localhost:27017/tug-of-war",
   "sessionSecret": "secret",
   "port": 1338
 }
