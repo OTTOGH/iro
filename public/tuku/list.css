@@ -87,6 +87,7 @@ body {
   position: relative;
   margin: 0 auto;
   text-align: center;
+  width:100%;
 }
 
 .image-item {
@@ -94,7 +95,7 @@ body {
   margin: 1%;
   background-color: white;
   box-sizing: border-box;
-  max-width: 100%;
+  max-width: 30%;
 }
 
 .image-item-img {

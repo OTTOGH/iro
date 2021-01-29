@@ -6,6 +6,7 @@ var bodyParser = require('body-parser')
 var async = require('async')
 var fs = require('fs')
 var path = require('path')
+var config = require('../config.json')
 
 var Image = require('../models/image')
 
@@ -180,7 +181,7 @@ function renderList(req, res, next, selector, sort, page, title) {
             images: images.map(function (image) {
               return {
                 id: image._id,
-                src: `/uploads/${image.fileName}`,
+                src: `${config.serverAddress}/uploads/${image.fileName}`,
                 width: image.width,
                 height: image.height,
                 uploadTime: image.uploadTime
