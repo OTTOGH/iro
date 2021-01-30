@@ -1,6 +1,6 @@
-var mongoose = require('mongoose')
+const mongoose = require('mongoose')
 
-var imageSchema = new mongoose.Schema({
+const imageSchema = new mongoose.Schema({
   _id: String,
   uploadTime: { type: Date, index: true },
   fileName: String,

@@ -1,22 +1,22 @@
 'use strict'
 
-var express = require('express')
-var router = express.Router()
-var bodyParser = require('body-parser')
-var async = require('async')
-var fs = require('fs')
-var path = require('path')
-var config = require('../config.json')
+const express = require('express')
+const router = express.Router()
+const bodyParser = require('body-parser')
+const async = require('async')
+const fs = require('fs')
+const path = require('path')
+const config = require('../config.json')
 
-var Image = require('../models/image')
+const Image = require('../models/image')
 
 router.use(bodyParser.json())
 router.use(bodyParser.urlencoded({ extended: true }))
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 12
 
 router.get('/', function (req, res, next) {
-  var page = Math.floor(req.query.page) || 1
+  const page = Math.floor(req.query.page) || 1
 
   renderList(req, res, next, null, '-uploadTime', page)
 })
@@ -26,21 +26,21 @@ router.get('/random', function (req, res, next) {
 })
 
 router.get('/today', function (req, res, next) {
-  var page = Math.floor(req.query.page) || 1
+  const page = Math.floor(req.query.page) || 1
 
-  var start = new Date()
+  const start = new Date()
   start.setHours(0)
   start.setMinutes(0)
   start.setSeconds(0)
   start.setMilliseconds(0)
 
-  var end = new Date()
+  const end = new Date()
   end.setHours(24)
   end.setMinutes(0)
   end.setSeconds(0)
   end.setMilliseconds(0)
 
-  var selector = {
+  const selector = {
     uploadTime: {
       $gte: start,
       $lt: end
@@ -51,7 +51,7 @@ router.get('/today', function (req, res, next) {
 })
 
 router.all('/delete', function (req, res, next) {
-  var id = req.query.id
+  const id = req.query.id
 
   if (
     !req.session ||
@@ -81,116 +81,118 @@ router.all('/delete', function (req, res, next) {
   )
 })
 
-function renderList(req, res, next, selector, sort, page, title) {
-  async.waterfall([
-    function (callback) {
-      var query
+async function renderList(req, res, next, selector, sort, page, title) {
+  // async.waterfall([
+  //   function (callback) {
+  let images
+  let count = PAGE_SIZE
+  const ids = []
+  try {
+    if (selector === 'random') {
+      res.locals.isRandom = true
+      images = await Image.find().select('_id').exec()//function (err, images) {
+      // if (err) return next(err)
 
-      if (selector === 'random') {
-        res.locals.isRandom = true
-        Image.find().select('_id').exec(function (err, images) {
-          if (err) return next(err)
+      let i = 0, index
 
-          var ids = []
+      for (i = 0; i < PAGE_SIZE; i++) {
+        index = Math.floor(Math.random() * images.length)
 
-          var i = 0, index
+        const newId = images[index]._id
 
-          for (i = 0; i < PAGE_SIZE; i++) {
-            index = Math.floor(Math.random() * images.length)
+        if (ids.some(function (id) {
+          return id === newId
+        })) {
+          i -= 1
+          continue
+        }
 
-            var newId = images[index]._id
-
-            if (ids.some(function (id) {
-              return id === newId
-            })) {
-              i -= 1
-              continue
-            }
-
-            ids.push(newId)
-          }
-
-          var query = Image.find({ _id: { $in: ids } })
-
-          callback(null, query, PAGE_SIZE)
-        })
-      } else {
-        res.locals.isRandom = false
-        Image.find(selector).count(function (err, count) {
-          if (err) return next(err)
-          callback(null, Image.find(selector), count)
-        })
-      }
-    },
-    function (query, count, callback) {
-      var pageCount = Math.max(Math.ceil(count / PAGE_SIZE), 1)
-
-      if (page < 1) return res.redirect('?page=1')
-      else if (page > pageCount) return res.redirect('?page=' + pageCount)
-
-      var buttonCountHalf = 2
-
-      var startPage
-
-      if (page <= buttonCountHalf || pageCount < buttonCountHalf * 2 + 1) {
-        startPage = 1
-      } else if (page > pageCount - buttonCountHalf) {
-        startPage = pageCount - buttonCountHalf * 2
-      } else {
-        startPage = page - buttonCountHalf
+        ids.push(newId)
       }
 
-      var pageButtons = []
 
-      if (startPage !== 1){
-        pageButtons.push({
-          text: '首',
-          value: 1
-        })
-      }
-
-      var i
-
-      for (i = startPage; i < startPage + 5 && i <= pageCount; i++) {
-        pageButtons.push({
-          text: i.toString(),
-          value: i
-        })
-      }
-
-      if (i - 1 !== pageCount) {
-        pageButtons.push({
-          text: '尾',
-          value: pageCount
-        })
-      }
-
-      query
-        .sort(sort)
-        .select('fileName width height')
-        .skip((page - 1) * PAGE_SIZE)
-        .limit(PAGE_SIZE)
-        .exec(function (err, images) {
-          if (err) return next(err)
-          res.render('tuku/index', {
-            title: title,
-            user: req.session.user,
-            page: page,
-            pageCount: pageCount,
-            pageButtons: pageButtons,
-            images: images.map(function (image) {
-              return {
-                id: image._id,
-                src: `${config.serverAddress}/uploads/${image.fileName}`,
-                width: image.width,
-                height: image.height,
-                uploadTime: image.uploadTime
-              }
-            })
-          })
-        })
+      // callback(null, query, PAGE_SIZE)
+      // })
+    } else {
+      res.locals.isRandom = false
+      count = await Image.find(selector).count()// function (err, count) {
+      // if (err) return next(err)
+      // callback(null, Image.find(selector), count)
+      // })
     }
-  ])
+    // },
+    // function (query, count, callback) {
+    const pageCount = Math.max(Math.ceil(count / PAGE_SIZE), 1)
+
+    if (page < 1) return res.redirect('?page=1')
+    else if (page > pageCount) return res.redirect('?page=' + pageCount)
+
+    const buttonCountHalf = 2
+
+    let startPage
+
+    if (page <= buttonCountHalf || pageCount < buttonCountHalf * 2 + 1) {
+      startPage = 1
+    } else if (page > pageCount - buttonCountHalf) {
+      startPage = pageCount - buttonCountHalf * 2
+    } else {
+      startPage = page - buttonCountHalf
+    }
+
+    const pageButtons = []
+
+    if (startPage !== 1) {
+      pageButtons.push({
+        text: '首',
+        value: 1
+      })
+    }
+
+    let i
+
+    for (i = startPage; i < startPage + 5 && i <= pageCount; i++) {
+      pageButtons.push({
+        text: i.toString(),
+        value: i
+      })
+    }
+
+    if (i - 1 !== pageCount) {
+      pageButtons.push({
+        text: '尾',
+        value: pageCount
+      })
+    }
+
+    images = await Image.find(ids.length ? { _id: { $in: ids } } : {})
+      .sort(sort)
+      .select('fileName width height')
+      .skip((page - 1) * PAGE_SIZE)
+      .limit(PAGE_SIZE)
+      .exec()//function (err, images) {
+    // if (err) return next(err)
+    res.render('tuku/index', {
+      title: title,
+      user: req.session.user,
+      page: page,
+      pageCount: pageCount,
+      pageButtons: pageButtons,
+      images: images.map(function (image) {
+        return {
+          id: image._id,
+          src: `${config.serverAddress}/uploads/${image.fileName}`,
+          width: image.width,
+          height: image.height,
+          uploadTime: image.uploadTime
+        }
+      })
+    })
+  } catch (e) {
+    next(e)
+  }
+  // })
+  // }
+  // ])
 }
 
 module.exports = router
